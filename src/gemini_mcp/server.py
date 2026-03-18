@@ -153,10 +153,23 @@ async def sync_indexed_directories() -> str:
         sources = db.list_indexed_sources()
         if not sources:
             return "Database is empty. Nothing to sync."
-            
-        # Find unique parent directories
-        directories = set()
+        # 1. Prune Ghost Files (Files that were deleted from disk but exist in DB)
+        purged_files = 0
+        purged_vectors = 0
+        existing_sources = []
+        
         for source in sources:
+            if not os.path.exists(source):
+                # File is gone, clear it from database
+                purged_vectors += db.delete_file(source)
+                purged_files += 1
+            else:
+                existing_sources.append(source)
+                
+        # 2. Rescan living directories
+        # Find unique parent directories of existing files
+        directories = set()
+        for source in existing_sources:
             parent = os.path.dirname(source)
             directories.add(parent)
             
@@ -171,7 +184,7 @@ async def sync_indexed_directories() -> str:
             res = await index_directory(d)
             results.append(res)
             
-        return "Sync Summary:\n" + "\n".join(results)
+        return f"Sync Summary:\n- Purged {purged_files} deleted files ({purged_vectors} vectors freed).\n" + "\n".join(results)
     except Exception as e:
         return f"Error during sync: {str(e)}"
 

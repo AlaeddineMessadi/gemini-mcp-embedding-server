@@ -34,18 +34,36 @@ class GeminiEmbeddingClient:
         try:
             embeddings = []
             
-            # Pass advanced configuration for optimal vector accuracy
-            response = self.client.models.embed_content(
-                model=EMBEDDING_MODEL,
-                contents=items,
-                config=types.EmbedContentConfig(
-                    task_type=task_type,
-                    output_dimensionality=output_dimensionality
-                )
-            )
+            # Simple exponential backoff for API rate limits (HTTP 429)
+            max_retries = 3
+            response = None
             
-            for emb in response.embeddings:
-                embeddings.append(emb.values)
+            for attempt in range(max_retries):
+                try:
+                    # Pass advanced configuration for optimal vector accuracy
+                    response = self.client.models.embed_content(
+                        model=EMBEDDING_MODEL,
+                        contents=items,
+                        config=types.EmbedContentConfig(
+                            task_type=task_type,
+                            output_dimensionality=output_dimensionality
+                        )
+                    )
+                    break  # Success
+                except Exception as e:
+                    if "429" in str(e) or "Too Many" in str(e):
+                        if attempt < max_retries - 1:
+                            wait_time = 2 ** attempt
+                            logger.warning(f"Rate limited by Gemini API. Waiting {wait_time}s before retry {attempt+1}/{max_retries}...")
+                            time.sleep(wait_time)
+                        else:
+                            raise e
+                    else:
+                        raise e
+            
+            if response and response.embeddings:
+                for emb in response.embeddings:
+                    embeddings.append(emb.values)
                 
             return embeddings
             

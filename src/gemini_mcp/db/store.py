@@ -68,6 +68,24 @@ class ChromaStore:
             
         return len(ids_to_delete)
         
+    def delete_file(self, file_path: str) -> int:
+        """
+        Deletes all chunks exactly matching a specific source file path.
+        """
+        data = self.collection.get(include=["metadatas"])
+        if not data or not data["metadatas"]:
+            return 0
+            
+        ids_to_delete = []
+        for doc_id, meta in zip(data["ids"], data["metadatas"]):
+            if meta and meta.get("source") == file_path:
+                ids_to_delete.append(doc_id)
+                
+        if ids_to_delete:
+            self.collection.delete(ids=ids_to_delete)
+            
+        return len(ids_to_delete)
+        
     def query(self, query_embedding: List[float], n_results: int = 5) -> List[Dict[str, Any]]:
         """
         Queries ChromaDB using the query vector and returns the top matches.

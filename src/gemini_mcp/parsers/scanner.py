@@ -62,22 +62,35 @@ def scan_directory(directory_path: str, chunk_size: int = 1000, overlap: int = 2
         logger.error(f"Directory not found: {directory_path}")
         return
         
+    abs_path = str(base_dir.absolute())
+    if abs_path in ["/", "/Users", "/home", "C:\\", "D:\\"]:
+        logger.error(f"Safety constraint: Cannot scan operating system root directory {abs_path}")
+        return
+        
     media_extensions = {
         '.jpg', '.jpeg', '.png', '.webp', # Images
         '.mp4',                           # Video
         '.mp3', '.wav', '.aiff', '.aac'   # Audio
     }
         
-    for root, _, files in os.walk(base_dir):
-        # Skip hidden directories like .git
-        if '/.' in root.replace('\\', '/'):
-            continue
+    IGNORE_DIRS = {".git", "node_modules", ".venv", "venv", "env", "__pycache__", "build", "dist", ".next", ".nuxt", "coverage", "vendor", "tmp"}
+    MAX_FILES_PER_SCAN = 2000
+    files_scanned = 0
+        
+    for root, dirs, files in os.walk(base_dir):
+        # Modify dirs in-place to prevent os.walk from entering ignored directories
+        dirs[:] = [d for d in dirs if not d.startswith('.') and d not in IGNORE_DIRS]
             
         for file in files:
             # Skip hidden files
             if file.startswith('.'):
                 continue
                 
+            if files_scanned >= MAX_FILES_PER_SCAN:
+                logger.warning(f"Reached safety limit of {MAX_FILES_PER_SCAN} files per scan. Stopping.")
+                return
+            
+            files_scanned += 1
             file_path = pathlib.Path(root) / file
             ext = file_path.suffix.lower()
             
