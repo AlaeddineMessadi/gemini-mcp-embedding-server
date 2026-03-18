@@ -73,7 +73,19 @@ def scan_directory(directory_path: str, chunk_size: int = 1000, overlap: int = 2
         '.mp3', '.wav', '.aiff', '.aac'   # Audio
     }
         
-    IGNORE_DIRS = {".git", "node_modules", ".venv", "venv", "env", "__pycache__", "build", "dist", ".next", ".nuxt", "coverage", "vendor", "tmp"}
+    IGNORE_DIRS = {
+        # Python
+        "__pycache__", "venv", "env", 
+        # JavaScript / Web
+        "node_modules", "bower_components",
+        # Build / Output / Compiled
+        "build", "dist", "out", "target", "bin", "obj",
+        # Dependencies / Packages
+        "vendor", "packages", "pkg",
+        # Temp, Cache & Coverage
+        "tmp", "temp", "coverage", "cache"
+    }
+    # Note: All hidden directories (starting with '.') like .git, .venv, .next are automatically skipped.
     MAX_FILES_PER_SCAN = 2000
     files_scanned = 0
         
