@@ -31,13 +31,8 @@ uv sync
 {
   "mcpServers": {
     "gemini-mcp": {
-      "command": "uv",
-      "args": [
-        "run",
-        "--directory",
-        "/path/to/gemini-mcp-embedding-server",
-        "src/gemini_mcp/server.py"
-      ],
+      "command": "/path/to/gemini-mcp-embedding-server/.venv/bin/gemini-mcp",
+      "args": [],
       "env": {
         "GEMINI_API_KEY": "your-api-key-here"
       }
