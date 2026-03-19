@@ -28,23 +28,11 @@ Connect your local documents, code, images, and videos directly to **Claude**, *
 
 ## 🚀 Installation & Setup
 
-This project uses [`uv`](https://github.com/astral-sh/uv) for lightning-fast Python dependency management.
+We support two ways to run this server: **Zero-Install** (Recommended) or **Local Developer Clone**.
+Make sure you have `uv` installed on your machine (`pip install uv`).
 
-```bash
-# 1. Clone the repository
-git clone https://github.com/AlaeddineMessadi/gemini-embedding-2-mcp-server.git
-cd gemini-embedding-2-mcp-server
-
-# 2. Install dependencies
-uv sync
-```
-
----
-
-## 🔌 Client Connection Guides
-
-You'll need a **Gemini API Key** from [Google AI Studio](https://aistudio.google.com/).
-Replace `/PATH/TO/gemini-embedding-2-mcp-server` with the absolute path on your machine where you cloned this repository.
+### Method 1: Zero-Install (Recommended)
+You can point your AI assistant to run the server directly from GitHub without ever cloning the repository locally. `uvx` acts like `npx` for Python, downloading and caching the server in a secure ephemeral environment automatically!
 
 ### 🦋 Claude Desktop
 Open your Claude Desktop config file (usually `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS) and add:
@@ -52,8 +40,12 @@ Open your Claude Desktop config file (usually `~/Library/Application Support/Cla
 {
   "mcpServers": {
     "gemini-embedding-2-mcp": {
-      "command": "/PATH/TO/gemini-embedding-2-mcp-server/.venv/bin/gemini-embedding-2-mcp",
-      "args": [],
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/AlaeddineMessadi/gemini-embedding-2-mcp-server.git",
+        "gemini-embedding-2-mcp"
+      ],
       "env": {
         "GEMINI_API_KEY": "your-api-key-here"
       }
@@ -67,7 +59,7 @@ Open your Claude Desktop config file (usually `~/Library/Application Support/Cla
 2. Click **+ Add new MCP server**
 3. Choose **command** as the type.
 4. Name: `gemini-embedding`
-5. Command: `GEMINI_API_KEY="your-api-key" /PATH/TO/gemini-embedding-2-mcp-server/.venv/bin/gemini-embedding-2-mcp`
+5. Command: `GEMINI_API_KEY="your-api-key" uvx --from git+https://github.com/AlaeddineMessadi/gemini-embedding-2-mcp-server.git gemini-embedding-2-mcp`
 
 ### 💻 VS Code (with Cline / RooCode)
 Open `~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json` and append:
@@ -75,8 +67,12 @@ Open `~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-d
 {
   "mcpServers": {
     "gemini-embedding": {
-      "command": "/PATH/TO/gemini-embedding-2-mcp-server/.venv/bin/gemini-embedding-2-mcp",
-      "args": [],
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/AlaeddineMessadi/gemini-embedding-2-mcp-server.git",
+        "gemini-embedding-2-mcp"
+      ],
       "env": {
         "GEMINI_API_KEY": "your-api-key-here"
       }
@@ -84,6 +80,22 @@ Open `~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-d
   }
 }
 ```
+
+---
+
+### Method 2: Local Developer Clone
+
+If you want to modify the source code:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/AlaeddineMessadi/gemini-embedding-2-mcp-server.git
+cd gemini-embedding-2-mcp-server
+
+# 2. Install dependencies
+uv sync
+```
+*(If you use this method, change the `command` in your MCP config to point to the absolute path of your local `.venv/bin/gemini-embedding-2-mcp` directory instead of using `uvx`)*.
 
 ---
 
