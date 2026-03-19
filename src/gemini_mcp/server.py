@@ -52,11 +52,22 @@ async def index_directory(directory_path: str, ignore: list[str] = None) -> str:
 
         logger.info(f"Starting scan of {directory_path}")
 
+        # Smart Deduplication: fetch known files and their hashes
+        existing_hashes = db.get_indexed_file_hashes(directory_path)
+
         # Batch processing to avoid massive API payloads
         BATCH_SIZE = 50
         total_indexed = 0
 
-        for item in scan_directory(directory_path, ignore=ignore):
+        for item in scan_directory(
+            directory_path, ignore=ignore, existing_hashes=existing_hashes
+        ):
+            # Handle changed files by deleting their old chunks first
+            if item.get("action") == "delete":
+                logger.info(f"File changed, deleting old index for: {item['source']}")
+                db.delete_file(item["source"])
+                continue
+
             chunks.append(item)
 
             if item.get("is_media", False):
@@ -82,7 +93,7 @@ async def index_directory(directory_path: str, ignore: list[str] = None) -> str:
             db.add_chunks(chunks, embeddings)
             total_indexed += len(chunks)
 
-        return f"Successfully indexed {total_indexed} segments (text & images) from {directory_path}."
+        return f"Successfully indexed {total_indexed} segments (text & images) from {directory_path}. Skipped unchanged files to save tokens."
 
     except Exception as e:
         logger.error(f"Error during indexing: {e}")

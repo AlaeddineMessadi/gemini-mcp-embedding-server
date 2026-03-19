@@ -130,3 +130,24 @@ class ChromaStore:
                 sources.add(meta["source"])
 
         return sorted(list(sources))
+
+    def get_indexed_file_hashes(self, directory_path: str = "") -> Dict[str, str]:
+        """
+        Returns a mapping of {source_file_path: file_hash} for all indexed files
+        that start with the given directory_path.
+        """
+        data = self.collection.get(include=["metadatas"])
+        if not data or not data["metadatas"]:
+            return {}
+
+        file_hashes = {}
+        for meta in data["metadatas"]:
+            if meta and "source" in meta and "file_hash" in meta:
+                source = meta["source"]
+                if not directory_path or source.startswith(directory_path):
+                    # We might encounter multiple chunks for the same source,
+                    # but they should all have the same file_hash.
+                    if source not in file_hashes:
+                        file_hashes[source] = meta["file_hash"]
+
+        return file_hashes

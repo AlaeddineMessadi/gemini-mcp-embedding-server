@@ -9,6 +9,7 @@ except ImportError:
     fitz = None
 
 import fnmatch
+import hashlib
 
 try:
     import docx
@@ -56,8 +57,26 @@ def extract_text_from_file(file_path: pathlib.Path) -> str:
         return ""
 
 
+def compute_file_hash(file_path: pathlib.Path) -> str:
+    """Computes an MD5 hash of the file contents."""
+    md5 = hashlib.md5()
+    try:
+        with open(file_path, "rb") as f:
+            # Read in 1MB chunks to avoid excessive memory on large files
+            for chunk in iter(lambda: f.read(1024 * 1024), b""):
+                md5.update(chunk)
+    except Exception as e:
+        logger.error(f"Error hashing file {file_path}: {e}")
+        return ""
+    return md5.hexdigest()
+
+
 def scan_directory(
-    directory_path: str, chunk_size: int = 1000, overlap: int = 200, ignore: list = None
+    directory_path: str,
+    chunk_size: int = 1000,
+    overlap: int = 200,
+    ignore: list = None,
+    existing_hashes: dict = None,
 ) -> Generator[Dict[str, Any], None, None]:
     """
     Recursively scans a directory, extracts text from supported files or raw bytes from images,
@@ -146,6 +165,19 @@ def scan_directory(
 
             files_scanned += 1
             file_path = pathlib.Path(root) / file
+
+            # Smart deduplication check
+            file_hash = compute_file_hash(file_path)
+            source_str = str(file_path.absolute())
+
+            if existing_hashes and source_str in existing_hashes:
+                if existing_hashes[source_str] == file_hash and file_hash != "":
+                    # File is identical to the one in DB, completely skip it!
+                    continue
+                else:
+                    # File has changed, we must tell the DB to delete the old chunks first
+                    yield {"action": "delete", "source": source_str}
+
             ext = file_path.suffix.lower()
 
             # Simple size check to avoid absolutely massive binaries
@@ -184,9 +216,10 @@ def scan_directory(
                             "is_media": True,
                             "mime_type": mime_type,
                             "metadata": {
-                                "source": str(file_path.absolute()),
+                                "source": source_str,
                                 "chunk_index": 0,
                                 "type": media_type,
+                                "file_hash": file_hash,
                             },
                         }
                 except Exception as e:
@@ -214,9 +247,10 @@ def scan_directory(
                             "mime_type": "image/png",
                             "text": f"--- Page {page_num + 1} from {file_path.name} ---\n{page_text}",
                             "metadata": {
-                                "source": str(file_path.absolute()),
+                                "source": source_str,
                                 "chunk_index": page_num,
                                 "type": "pdf_visual_page",
+                                "file_hash": file_hash,
                             },
                         }
                 except Exception as e:
@@ -236,8 +270,9 @@ def scan_directory(
                         "is_media": False,
                         "mime_type": "text/plain",
                         "metadata": {
-                            "source": str(file_path.absolute()),
+                            "source": source_str,
                             "chunk_index": i,
                             "type": "text",
+                            "file_hash": file_hash,
                         },
                     }
