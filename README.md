@@ -81,6 +81,46 @@ Open your Claude Desktop config file (usually `~/Library/Application Support/Cla
 4. Name: `gemini-embedding`
 5. Command: `GEMINI_API_KEY="your-api-key" uvx --from git+https://github.com/AlaeddineMessadi/gemini-embedding-2-mcp-server.git gemini-embedding-2-mcp`
 
+### 🏄‍♂️ Windsurf (Cascade)
+Open your `~/.codeium/windsurf/mcp_config.json` file and add:
+```json
+{
+  "mcpServers": {
+    "gemini-embedding-2-mcp": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/AlaeddineMessadi/gemini-embedding-2-mcp-server.git",
+        "gemini-embedding-2-mcp"
+      ],
+      "env": {
+        "GEMINI_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+### ⚡ Zed Editor
+Open your `~/.config/zed/settings.json` and append the MCP server block:
+```json
+{
+  "experimental.mcp": {
+    "gemini-embedding-2-mcp": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/AlaeddineMessadi/gemini-embedding-2-mcp-server.git",
+        "gemini-embedding-2-mcp"
+      ],
+      "env": {
+        "GEMINI_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
 ### 💻 VS Code (with Cline / RooCode)
 Open `~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json` and append:
 ```json
@@ -115,7 +155,11 @@ cd gemini-embedding-2-mcp-server
 # 2. Install dependencies
 uv sync
 ```
-*(If you use this method, change the `command` in your MCP config to point to the absolute path of your local `.venv/bin/gemini-embedding-2-mcp` directory instead of using `uvx`)*.
+
+*(If you use this method, you can add it directly to Claude Code CLI locally by running:)*
+```bash
+claude mcp add gemini-embedding-local --env GEMINI_API_KEY="your-api-key" uv --directory "$(pwd)" run gemini-embedding-2-mcp
+```
 
 ---
 
