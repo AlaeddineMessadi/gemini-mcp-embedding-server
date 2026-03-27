@@ -41,8 +41,8 @@ class GeminiEmbeddingClient:
         try:
             embeddings = []
 
-            # Simple exponential backoff for API rate limits (HTTP 429)
-            max_retries = 3
+            # Exponential backoff for API rate limits (HTTP 429) - robust enough for TPM limits
+            max_retries = 5
             response = None
 
             for attempt in range(max_retries):
@@ -58,9 +58,16 @@ class GeminiEmbeddingClient:
                     )
                     break  # Success
                 except Exception as e:
-                    if "429" in str(e) or "Too Many" in str(e):
+                    error_msg = str(e).lower()
+                    if (
+                        "429" in error_msg
+                        or "too many" in error_msg
+                        or "resource exhausted" in error_msg
+                        or "quota" in error_msg
+                    ):
                         if attempt < max_retries - 1:
-                            wait_time = 2**attempt
+                            # Base 5 seconds: 5s, 10s, 20s, 40s. Wait out the 1-minute bucket.
+                            wait_time = (2**attempt) * 5
                             logger.warning(
                                 f"Rate limited by Gemini API. Waiting {wait_time}s before retry {attempt + 1}/{max_retries}..."
                             )

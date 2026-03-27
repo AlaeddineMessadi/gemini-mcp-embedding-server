@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ghost Pruning**: The server now actively deletes the old vectors from ChromaDB when a file modification is detected.
 - **One-Click Deployment**: Added `smithery.yaml` to officially support 1-click installation via the Smithery CLI.
 
+### Changed
+- **Explicit Citations**: Search results now explicitly print out the `File Name` and the absolute `File Path` so clients using this MCP Server immediately show rich file context.
+
 ## [1.0.0] - 2024-XX-XX
 
 ### Added

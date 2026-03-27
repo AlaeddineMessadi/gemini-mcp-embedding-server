@@ -1,3 +1,4 @@
+import os
 import logging
 from typing import Optional
 
@@ -55,8 +56,8 @@ async def index_directory(directory_path: str, ignore: list[str] = None) -> str:
         # Smart Deduplication: fetch known files and their hashes
         existing_hashes = db.get_indexed_file_hashes(directory_path)
 
-        # Batch processing to avoid massive API payloads
-        BATCH_SIZE = 50
+        # Batch processing to avoid massive API payloads and spread out TPM usage
+        BATCH_SIZE = 20
         total_indexed = 0
 
         for item in scan_directory(
@@ -123,13 +124,17 @@ async def search_my_documents(query: str, limit: int = 5) -> str:
         formatted = f"Found {len(matches)} relevant excerpts/images:\n\n"
         for i, match in enumerate(matches, 1):
             source = match["metadata"].get("source", "Unknown file")
+            filename = (
+                os.path.basename(source) if source != "Unknown file" else "Unknown file"
+            )
             score = match.get("distance", 0.0)
             text = match["text"]
 
-            formatted += (
-                f"--- Result {i} (from: {source}) (distance: {score:.3f}) ---\n"
-            )
-            formatted += f"{text}\n\n"
+            formatted += f"--- Result {i} ---\n"
+            formatted += f"File Name: {filename}\n"
+            formatted += f"File Path: {source}\n"
+            formatted += f"Relevance Distance: {score:.3f}\n"
+            formatted += f"Content:\n{text}\n\n"
 
         return formatted
 
@@ -173,8 +178,6 @@ async def sync_indexed_directories() -> str:
     Auto-updates existing folders. It finds all unique parent directories of currently
     indexed files and re-indexes them to capture new or modified files.
     """
-    import os
-
     try:
         db = get_db()
         sources = db.list_indexed_sources()
